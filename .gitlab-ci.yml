@@ -1,0 +1,113 @@
+image: docker:stable
+
+services:
+  - docker:dind
+  
+variables:
+ DOCKER_IMAGE_TAG: 'gcr.io/test2-231205'
+
+before_script:
+    - export DOCKER_HOST="tcp://localhost:2375"
+    - docker login -u gitlab-ci-token -p $CI_JOB_TOKEN registry.gitlab.com
+    #Log in to GCR
+    - echo "$DENYS_GCS" > key.json
+    - docker login -u _json_key --password-stdin https://gcr.io < key.json
+
+stages:
+    - build
+    - test
+#    - deploy
+    
+bookings:
+    tags: 
+    - denys
+    stage: build   
+    script:
+         - echo "Building"
+         - cd bookings
+         - docker build  -t "${DOCKER_IMAGE_TAG}/bookings" .
+        #Push the image
+         - docker push ${DOCKER_IMAGE_TAG}/bookings
+
+showtimes:
+    tags: 
+    - denys
+    stage: build
+    script:
+        - echo "Building"
+        - cd showtimes
+        - docker build  -t "${DOCKER_IMAGE_TAG}/showtimes" .
+        #Push the image
+        - docker push ${DOCKER_IMAGE_TAG}/showtimes
+         
+movies:
+    tags: 
+     - denys
+    stage: build
+    script:
+        - echo "Building"
+        - cd movies
+        - docker build  -t "${DOCKER_IMAGE_TAG}/movies" .
+        #Push the image
+        - docker push ${DOCKER_IMAGE_TAG}/movies
+         
+users:
+    tags: 
+     - denys
+    stage: build
+    script:
+         - echo "Building"
+         - cd users
+         - docker build  -t "${DOCKER_IMAGE_TAG}/users" .
+        #Push the image
+         - docker push ${DOCKER_IMAGE_TAG}/users         
+    
+test-users:
+    tags: 
+    - denys
+    stage: test
+    script:
+         - echo "Testing users" 
+
+test-showtimes:
+    tags: 
+    - denys
+    stage: test
+    script:
+         - echo "Testing showtimes" 
+        
+test-movies:
+    tags: 
+    - denys
+    stage: test
+    script:
+         - echo "Testing movies"
+
+
+test-bookings:
+    tags:
+    - denys
+    stage: test
+    script:
+         - echo "Testing movies"
+
+deploy:
+    tags: 
+    - denys
+    image: 'google/cloud-sdk:latest'
+    stage: deploy
+    script:
+    # Authenticate with GKE
+        - echo "deploy"
+        - echo "$DENYS_GCS" > key.json
+        - gcloud auth activate-service-account --key-file=key.json
+        - gcloud config set project test2-231205
+        - gcloud config set container/cluster  gitlab-ci	
+        - gcloud config set compute/zone us-central1-a
+        - gcloud container clusters get-credentials gitlab-ci --zone us-central1-a
+    # Do the deployment
+        - kubectl create namespace dev
+        - kubectl apply -f deployment.yaml --namespace=dev
+    only:
+        - denys.ci
+

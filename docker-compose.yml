@@ -1,0 +1,32 @@
+version: '3'
+services:
+  users:
+    build: users/
+    image: gcr.io/gke-monitoring-230412/users
+    ports:
+    - "80:80"
+    
+#  bookings:
+#    build: bookings/
+#   image: gcr.io/gke-monitoring-230412/bookings
+#    ports:
+#    - "80"
+#    depends_on:
+#    - users
+
+#  showtimes:
+#    build: showtimes/
+#    image: gcr.io/gke-monitoring-230412/showtimes
+#    ports:
+#    - "80"
+#    depends_on:
+#    - users
+
+#  movies:
+#    build: movies/
+#    image: gcr.io/gke-monitoring-230412/movies
+#    ports:
+#    - "80"
+#    depends_on:
+#    - users
+
